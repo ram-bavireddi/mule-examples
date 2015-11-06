@@ -12,7 +12,7 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 	<http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" basePath="transactions" doc:name="HTTP Listener Configuration" />
 	<db:mysql-config name="MySQL_Configuration" url="jdbc:mysql://localhost:3306/dev?user=root&amp;password=root" doc:name="MySQL Configuration" />
 	<flow name="single-resource-transactionFlow">
-		<http:listener config-ref="HTTP_Listener_Configuration" path="/single-resource" doc:name="HTTP" />
+		<http:listener config-ref="HTTP_Listener_Configuration" path="/single-resource" doc:name="HTTP" allowedMethods="POST"/>
 		<json:json-to-object-transformer returnClass="java.util.Map" doc:name="JSON to Object" />
 		<set-variable variableName="originalPayload" value="#[payload]" doc:name="savePayload" />
 		<transactional action="ALWAYS_BEGIN" doc:name="insertPayloadInSameTransaction">
@@ -37,5 +37,11 @@ otherwise {
 	"message": "something wrong went with your order"
 }]]></dw:set-payload>
 		</dw:transform-message>
+        <choice-exception-strategy doc:name="Choice Exception Strategy">
+            <catch-exception-strategy when="exception.causedBy(java.sql.SQLException)" doc:name="java.sql.SQLException">
+                <set-property propertyName="http.status" value="#[500]" doc:name="500"/>
+                <set-payload value="#['{&quot;error&quot;: &quot;Internal Server Error&quot;, &quot;cause&quot;: &quot;' + exception.getMessage() + '&quot;}']" doc:name="internalServerError" mimeType="application/json"/>
+            </catch-exception-strategy>
+        </choice-exception-strategy>
 	</flow>
 </mule>
