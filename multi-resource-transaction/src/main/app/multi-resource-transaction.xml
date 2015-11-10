@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+	<http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" basePath="/transactions" doc:name="HTTP Listener Configuration" />
+	<db:mysql-config name="MySQL_Configuration" url="jdbc:mysql://localhost:3306/dev?user=root&amp;password=root" doc:name="MySQL Configuration" />
+	<jms:activemq-connector name="Active_MQ" specification="1.1" brokerURL="tcp://localhost:61616" validateConnections="true"
+		doc:name="Active MQ" />
+	<flow name="multi-resource-transactionFlow">
+		<http:listener config-ref="HTTP_Listener_Configuration" path="/multi-resource" doc:name="HTTP" />
+		<json:json-to-object-transformer returnClass="java.util.Map" doc:name="JSON to Object" />
+		<set-variable variableName="originalPayload" value="#[payload]" doc:name="savePayload" />
+		<ee:multi-transactional action="ALWAYS_BEGIN" doc:name="Transactional">
+			<db:insert config-ref="MySQL_Configuration" transactionalAction="ALWAYS_JOIN" doc:name="Database">
+				<db:parameterized-query><![CDATA[INSERT INTO CUSTOMER(NAME,ADDRESS) VALUES(#[payload.customer.name],#[payload.customer.address])]]></db:parameterized-query>
+			</db:insert>
+			<dw:transform-message doc:name="Transform Message">
+				<dw:set-payload><![CDATA[%dw 1.0
+					%output application/json
+					---
+					{
+						"order": flowVars.originalPayload.order
+					}]]>
+				</dw:set-payload>
+			</dw:transform-message>
+			<object-to-string-transformer doc:name="Object to String" />
+			<logger message="Message being inserted into JMS: #[payload]" level="INFO" doc:name="Logger" />
+			<jms:outbound-endpoint queue="Order.Queue" connector-ref="Active_MQ" doc:name="JMS">
+				<ee:multi-transaction action="ALWAYS_JOIN" />
+			</jms:outbound-endpoint>
+			<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		</ee:multi-transactional>
+	</flow>
+</mule>
