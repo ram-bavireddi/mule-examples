@@ -20,7 +20,7 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 				<db:parameterized-query><![CDATA[INSERT INTO CUSTOMER(NAME,ADDRESS) VALUES(#[payload.customer.name],#[payload.customer.address])]]></db:parameterized-query>
 			</db:insert>
 			<db:insert config-ref="MySQL_Configuration" doc:name="insertOrder">
-				<db:parameterized-query><![CDATA[INSERT INTO CUSTOMER_ORDER(ITEM,SHIPPING_ADDRESS,CUSTOMER_ID)
+                <db:parameterized-query><![CDATA[INSERT INTO CUSTOMER_ORDER(ITEM,SHIPPING_ADDRESS,CUSTOMER_ID)
 VALUES(#[flowVars.originalPayload.order.item],
 #[flowVars.originalPayload.order.shippingAddress],
 #[payload[0].generated_key])]]></db:parameterized-query>
