@@ -6,6 +6,7 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+    
     <flow name="ForeachHeaderFlow">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/foreach-headertest" doc:name="HTTP"/>
         <component class="org.ram.QueryParamsToList" doc:name="QueryParamsToList"/>
@@ -13,4 +14,5 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
             <logger message="Header number #[counter]: #[payload]" level="INFO" doc:name="Logger"/>
         </foreach>
     </flow>
+    
 </mule>

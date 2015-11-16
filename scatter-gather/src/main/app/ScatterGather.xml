@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <jms:activemq-connector name="Active_MQ" specification="1.1" brokerURL="tcp://localhost:61616" validateConnections="true" doc:name="Active MQ"/>
+    <spring:beans>
+        <spring:bean id="inMemoryObjectStore" name="SimpleMemoryObjectStore" class="org.mule.util.store.SimpleMemoryObjectStore"/>
+    </spring:beans>
+    <flow name="ScatterGatherFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/scatter-gather-test" doc:name="HTTP"/>
+        <set-payload value="#['Sample Payload']" doc:name="Set Payload"/>
+        <logger message="Thread before Scatter Gather #[Thread.currentThread()]" level="INFO" doc:name="Logger"/>
+        <scatter-gather doc:name="Scatter-Gather">
+            <flow-ref name="ScatterGatherSub_Flow" doc:name="ScatterGatherSub_Flow"/>
+            <flow-ref name="ScatterGatherFlow1" doc:name="ScatterGatherFlow1"/>
+        </scatter-gather>
+        <logger message="Thread after Scatter Gather #[Thread.currentThread()]" level="INFO" doc:name="Logger"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <response>
+            <set-payload value="#['Sample Response']" doc:name="Set Payload"/>
+        </response>
+    </flow>
+    <flow name="ScatterGatherFlow1">
+        <until-successful maxRetries="5" doc:name="Until Successful" objectStore-ref="inMemoryObjectStore">
+            <jms:outbound-endpoint queue="sample.queue" connector-ref="Active_MQ" doc:name="JMS"/>
+        </until-successful>
+        <logger message="Thread after Until Successful #[Thread.currentThread()]" level="INFO" doc:name="Logger"/>
+        <set-payload value="#['Dummy']" doc:name="Set Payload"/>
+    </flow>
+    <sub-flow name="ScatterGatherSub_Flow">
+        <logger message="Thread in SubFlow #[Thread.currentThread()]" level="INFO" doc:name="Logger"/>
+        <set-payload value="#['Success']" doc:name="Set Payload"/>
+    </sub-flow>
+</mule>
