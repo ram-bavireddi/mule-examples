@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:jbossts="http://www.mulesoft.org/schema/mule/jbossts" xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/jbossts http://www.mulesoft.org/schema/mule/jbossts/current/mule-jbossts.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+	<spring:beans>
+		<spring:bean id="mySqlXADataSource" name="MySqlXADataSource" class="com.mysql.jdbc.jdbc2.optional.MysqlXADataSource">
+			<spring:property name="user" value="root" />
+			<spring:property name="password" value="root" />
+			<spring:property name="url" value="jdbc:mysql://localhost:3306/dev" />
+		</spring:bean>
+	</spring:beans>
+
+	<db:mysql-config name="MySQL_XA_Configuration" dataSource-ref="mySqlXADataSource" doc:name="MySQL Configuration" />
+
+	<jms:activemq-xa-connector name="ActiveMQ_XA_Configuration" specification="1.1" brokerURL="tcp://localhost:61616"
+		validateConnections="true" doc:name="Active MQ" />
+
+	<jbossts:transaction-manager doc:name="JBoss Transaction Manager" />
+
+	<flow name="jboss-xa-transactionFlow">
+		<http:listener config-ref="HTTP_Listener_Configuration" path="/xa-jboss" doc:name="HTTP" />
+		<json:json-to-object-transformer returnClass="java.util.Map" doc:name="JSON to Object" />
+		<set-variable variableName="originalPayload" value="#[payload]" doc:name="savePayload" />
+		<ee:xa-transactional action="ALWAYS_BEGIN" doc:name="Transactional">
+			<db:insert config-ref="MySQL_XA_Configuration" transactionalAction="ALWAYS_JOIN" doc:name="Database">
+                <db:parameterized-query><![CDATA[INSERT INTO CUSTOMER(NAME,ADDRESS) VALUES(#[payload.customer.name],#[payload.customer.address])]]></db:parameterized-query>
+
+			</db:insert>
+			<dw:transform-message doc:name="Transform Message">
+				<dw:set-payload><![CDATA[%dw 1.0
+					%output application/json
+					---
+					{
+						"order": flowVars.originalPayload.order
+					}]]>
+				</dw:set-payload>
+			</dw:transform-message>
+			<object-to-string-transformer doc:name="Object to String" />
+			<logger message="Message being inserted into JMS: #[payload]" level="INFO" doc:name="Logger" />
+			<jms:outbound-endpoint queue="Order.Queue" connector-ref="ActiveMQ_XA_Configuration" doc:name="JMS">
+				<xa-transaction action="ALWAYS_JOIN" />
+			</jms:outbound-endpoint>
+			<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		</ee:xa-transactional>
+	</flow>
+</mule>
