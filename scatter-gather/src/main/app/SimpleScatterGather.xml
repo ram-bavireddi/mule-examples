@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+
+	<flow name="simpleScatterGather">
+		<http:listener config-ref="HTTP_Listener_Configuration" path="/scatter-gather-test" doc:name="HTTP" />
+		<scatter-gather doc:name="Scatter-Gather">
+            <flow-ref name="subFlow1" doc:name="callSubFlow1"/>
+            <flow-ref name="subFlow2" doc:name="callSubFlow2"/>
+		</scatter-gather>
+        <logger message="Payload #[payload]" level="INFO" doc:name="logPayload"/>
+        <foreach  doc:name="forEach" collection="#[payload]">
+            <logger message="Payload #[flowVars.counter] is : #[payload]" level="INFO" doc:name="logEachPayload"/>
+        </foreach>
+        <set-payload value="{&quot;message&quot;: &quot;success&quot;}" mimeType="application/json" doc:name="setResponse"/>
+	</flow>
+	<sub-flow name="subFlow1">
+		<!-- <logger message="Thread executing the flow: #[Thread.currentThread()]" level="INFO" doc:name="logThreadInfo" /> -->
+		<set-payload value="Payload1" doc:name="setPayload" />
+	</sub-flow>
+	<sub-flow name="subFlow2">
+		<!-- <logger message="Thread executing the flow: #[Thread.currentThread()]" level="INFO" doc:name="logThreadInfo" /> -->
+		<set-payload value="Payload2" doc:name="setPayload" />
+	</sub-flow>
+</mule>
