@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+
+	<flow name="RequestReplyWithRollbackFlow">
+		<http:listener config-ref="HTTP_Listener_Configuration" path="/rollback" doc:name="HTTP" />
+		<set-payload value="#['Sample Payload']" doc:name="Set Payload" />
+		<request-reply doc:name="Request-Reply">
+			<vm:outbound-endpoint exchange-pattern="one-way" path="rollback.request" doc:name="VM" />
+			<vm:inbound-endpoint exchange-pattern="one-way" path="rollback.reply" doc:name="VM" />
+		</request-reply>
+	</flow>
+
+	<flow name="RequestReplyWithRollbackFlow1" processingStrategy="synchronous">
+		<vm:inbound-endpoint exchange-pattern="one-way" path="rollback.request" doc:name="VM">
+			<vm:transaction action="ALWAYS_BEGIN" />
+		</vm:inbound-endpoint>
+		<logger message="Executing with payload: #[payload]" level="INFO" doc:name="Logger" />
+		<component class="org.ram.BusinessComponent" doc:name="Java" />
+		<rollback-exception-strategy maxRedeliveryAttempts="5" doc:name="Rollback Exception Strategy">
+			<logger message="Will attempt redelivery" level="INFO" doc:name="Logger" />
+            <on-redelivery-attempts-exceeded>
+                <set-payload value="#['{&quot;message&quot;: &quot;Redelivery exhausted&quot;}']" mimeType="application/json" doc:name="Set Payload"/>
+                <vm:outbound-endpoint exchange-pattern="one-way" path="rollback.reply" doc:name="VM"/>
+            </on-redelivery-attempts-exceeded>
+		</rollback-exception-strategy>
+	</flow>
+	
+</mule>
