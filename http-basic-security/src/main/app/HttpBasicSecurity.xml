@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:mule-ss="http://www.mulesoft.org/schema/mule/spring-security"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/spring-security http://www.mulesoft.org/schema/mule/spring-security/current/mule-spring-security.xsd">
+
+	<flow name="HttpBasicSecurityFlow">
+		<http:listener config-ref="httpListener" path="/test" doc:name="receiveReq" />
+		<mule-ss:http-security-filter doc:name="securityFilter" realm="mule-realm" securityProviders="muleSecurityProvider" />
+		<set-variable value="#[message.inboundProperties.'http.method']" variableName="httpMethod" doc:name="getHttpMethod" />
+		<choice doc:name="checkAllowedHttpMethods">
+			<when expression="#[flowVars.httpMethod.equalsIgnoreCase('GET')]">
+				<processor-chain doc:name="executeGetReq">
+					<mule-ss:authorization-filter doc:name="authorizeUser" requiredAuthorities="ROLE_USER" />
+					<set-payload value="#['Hello GET World']" doc:name="setPayload" />
+				</processor-chain>
+			</when>
+			<when expression="#[flowVars.httpMethod.equalsIgnoreCase('POST')]">
+				<processor-chain doc:name="executePostReq">
+					<mule-ss:authorization-filter doc:name="authorizeAdmin" requiredAuthorities="ROLE_ADMIN" />
+					<set-payload value="#['Hello POST World']" doc:name="setPayload" />
+				</processor-chain>
+			</when>
+			<otherwise>
+				<scripting:component doc:name="throwException">
+					<scripting:script engine="Groovy"><![CDATA[throw new org.ram.http.InvalidMethodException('access denied to ' + httpMethod)]]></scripting:script>
+				</scripting:component>
+			</otherwise>
+		</choice>
+		<choice-exception-strategy doc:name="Choice Exception Strategy">
+			<catch-exception-strategy when="#[org.mule.util.ExceptionUtils.containsType(exception, org.ram.http.InvalidMethodException)]"
+				doc:name="invalidMethod">
+				<set-property propertyName="http.status" value="405" doc:name="setStatusCode" />
+				<set-payload value="Invalid Method" doc:name="setReason" />
+			</catch-exception-strategy>
+			<catch-exception-strategy when="#[exception.causedBy(org.mule.api.security.UnauthorisedException)]" doc:name="unauthorized">
+				<set-property propertyName="http.status" value="401" doc:name="setStatusCode" />
+				<set-payload value="Unauthorized" doc:name="setReason" />
+			</catch-exception-strategy>
+			<catch-exception-strategy when="#[exception.causedBy(org.mule.api.security.NotPermittedException)]" doc:name="notPermitted">
+				<set-property propertyName="http.status" value="403" doc:name="setStatusCode" />
+				<set-payload value="Not Permitted" doc:name="setReason" />
+			</catch-exception-strategy>
+			<catch-exception-strategy when="#[exception.causedBy(java.lang.Exception)]" doc:name="internalServerError">
+				<set-property propertyName="http.status" value="500" doc:name="setStatusCode" />
+				<set-payload value="Internal Server error" doc:name="setReason" />
+			</catch-exception-strategy>
+		</choice-exception-strategy>
+	</flow>
+</mule>
