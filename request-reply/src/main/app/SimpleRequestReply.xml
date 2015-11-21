@@ -1,24 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.7.2"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="
-http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
-http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+
 	<flow name="SimpleRequestReplyFlow">
 		<http:listener config-ref="HTTP_Listener_Configuration" path="/test" doc:name="HTTP" />
-		<set-payload value="#['Sample Payload']" doc:name="Set Payload" />
 		<request-reply doc:name="Request-Reply">
 			<vm:outbound-endpoint exchange-pattern="one-way" path="request" doc:name="VM" />
 			<vm:inbound-endpoint exchange-pattern="one-way" path="reply" doc:name="VM" />
 		</request-reply>
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
 	</flow>
 
 	<flow name="SimpleRequestReplyFlow1">
 		<vm:inbound-endpoint exchange-pattern="one-way" path="request" doc:name="VM" />
-		<logger message="Executing with payload: #[payload]" level="INFO" doc:name="Logger" />
-		<!-- <component class="org.ram.BusinessComponent" doc:name="Java" /> -->
+		<set-payload value="one - way VM payload" doc:name="Set Payload" />
+		<component class="org.ram.BusinessComponent" doc:name="Java" />
+		<catch-exception-strategy doc:name="Catch Exception Strategy">
+			<set-payload value="exception payload from one-way VM" doc:name="Set Payload" />
+			<vm:outbound-endpoint exchange-pattern="one-way" path="reply" doc:name="VM" />
+		</catch-exception-strategy>
 	</flow>
+
 </mule>
