@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+	<flow name="forEachFlow">
+		<http:listener config-ref="HTTP_Listener_Configuration" path="/async" doc:name="receiveReq" />
+		<set-payload value="#[['Ram', 'Ramu', 'Manav', 'Bharath', 'Venkatesh', 'Isshta', 'Priyanka']]" doc:name="setSampleList" />
+		<foreach doc:name="forEach">
+			<vm:outbound-endpoint exchange-pattern="one-way" path="request" doc:name="VM" />
+		</foreach>
+		<set-payload value="Request Submitted" doc:name="setRes" />
+	</flow>
+	<flow name="asyncFlow" processingStrategy="asynchronous">
+		<vm:inbound-endpoint exchange-pattern="one-way" path="request" doc:name="VM" />
+		<logger message="Name is : #[payload]" level="INFO" doc:name="logPayload" />
+		<scripting:component doc:name="sleep">
+			<scripting:script engine="Groovy"><![CDATA[Thread.sleep(5000)]]></scripting:script>
+		</scripting:component>
+		<logger message="#[Thread.currentThread()] completed execution" level="INFO" doc:name="logThread" />
+	</flow>
+</mule>

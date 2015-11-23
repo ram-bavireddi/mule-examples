@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+	<flow name="foreachXml">
+		<http:listener config-ref="HTTP_Listener_Configuration" path="/foreach-xml" doc:name="receiveReq" />
+		<set-payload value="#[Thread.currentThread().getContextClassLoader().getResourceAsStream('products.xml')]" doc:name="readProductsFile" />
+		<object-to-string-transformer mimeType="application/xml" doc:name="toString" />
+		<foreach collection="#[xpath3('/products/product', payload, 'NODESET')]" doc:name="forEach">
+			<json:xml-to-json-transformer doc:name="toJson" />
+			<vm:outbound-endpoint exchange-pattern="one-way" path="request.queue" doc:name="VM" />
+		</foreach>
+		<set-payload value="Request Submitted" doc:name="setResponse" />
+	</flow>
+	<flow name="asyncVMFlow" processingStrategy="asynchronous">
+		<vm:inbound-endpoint exchange-pattern="one-way" path="request.queue" doc:name="VM" />
+		<logger message="#[payload]" level="INFO" doc:name="logPayload" />
+		<scripting:component doc:name="sleep">
+			<scripting:script engine="Groovy"><![CDATA[Thread.sleep(5000)]]></scripting:script>
+		</scripting:component>
+		<logger message="#[Thread.currentThread()] completed execution" level="INFO" doc:name="logThread" />
+	</flow>
+</mule>

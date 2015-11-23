@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<products>
+	<product>
+		<id>1</id>
+		<name>product1</name>
+	</product>
+	<product>
+		<id>2</id>
+		<name>product2</name>
+	</product>
+	<product>
+		<id>3</id>
+		<name>product3</name>
+	</product>
+	<product>
+		<id>4</id>
+		<name>product4</name>
+	</product>
+</products>

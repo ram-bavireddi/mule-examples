@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+	<asynchronous-processing-strategy name="Asynchronous_Processing_Strategy" doc:name="Asynchronous Processing Strategy" />
+	<flow name="ForeachAndAsyncScopeFlow">
+		<http:listener config-ref="HTTP_Listener_Configuration" path="/async-scope" doc:name="HTTP" />
+		<set-payload value="#[['Ram', 'Ramu', 'Bharath', 'Manav', 'Venkatesh', 'Priyanka', 'Isshta']]" doc:name="Set Payload" />
+		<foreach doc:name="For Each">
+			<async processingStrategy="Asynchronous_Processing_Strategy" doc:name="Async">
+				<flow-ref name="ForeachAndAsyncScopeSubFlow" doc:name="ForeachAndAsyncScopeSubFlow" />
+			</async>
+		</foreach>
+		<set-payload value="Request Submitted" doc:name="Set Payload" />
+	</flow>
+	<sub-flow name="ForeachAndAsyncScopeSubFlow">
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<scripting:component doc:name="Sleep">
+			<scripting:script engine="Groovy"><![CDATA[Thread.sleep(10000)]]></scripting:script>
+		</scripting:component>
+		<logger message="#[Thread.currentThread()] completed execution" level="INFO" doc:name="Logger" />
+	</sub-flow>
+</mule>
