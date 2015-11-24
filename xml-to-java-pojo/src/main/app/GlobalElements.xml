@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+
+	<http:listener-config name="httpListener" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration" />
+	<mulexml:jaxb-context name="jaxbContext" packageNames="org.ram.jaxb.model" doc:name="JAXB Context" />
+	<spring:beans>
+		<spring:bean id="sampleXmlPayload" class="org.apache.commons.io.IOUtils" factory-method="toString">
+			<spring:constructor-arg value="classpath:person.xml" type="java.io.InputStream" index="0" />
+		</spring:bean>
+
+		<spring:bean id="xStream" class="com.thoughtworks.xstream.XStream" />
+
+		<spring:bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean" p:targetObject-ref="xStream" p:targetMethod="processAnnotations">
+			<spring:property name="arguments">
+				<spring:list>
+					<spring:value>org.ram.xstream.model.Person</spring:value>
+					<spring:value>org.ram.xstream.model.EmailCollection</spring:value>
+					<spring:value>org.ram.xstream.model.EmailAddress</spring:value>
+				</spring:list>
+			</spring:property>
+		</spring:bean>
+	</spring:beans>
+</mule>

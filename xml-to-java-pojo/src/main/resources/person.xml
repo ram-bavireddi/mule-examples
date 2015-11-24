@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<person>
+	<name>Ram Bavireddi</name>
+	<dob>1988-02-12</dob>
+	<emails>
+		<email>
+			<type>personal</type>
+			<address>ramu.bavireddi@gmail.com</address>
+		</email>
+		<email>
+			<type>work</type>
+			<address>ram@capiot.com</address>
+		</email>
+	</emails>
+</person>
