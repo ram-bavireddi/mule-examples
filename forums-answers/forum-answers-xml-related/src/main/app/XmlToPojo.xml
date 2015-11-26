@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:p="http://www.springframework.org/schema/p" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+
+	<spring:beans>
+		<spring:bean id="xStream" name="XStream" class="com.thoughtworks.xstream.XStream" />
+		<spring:bean id="processAnnotations" name="MethodInvokingFactoryBean" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean"
+			p:targetObject-ref="xStream" p:targetMethod="processAnnotations">
+			<spring:property name="arguments">
+				<spring:list>
+					<spring:value>org.mule.forum.answer.model.Persons</spring:value>
+					<spring:value>org.mule.forum.answer.model.Person</spring:value>
+				</spring:list>
+			</spring:property>
+		</spring:bean>
+	</spring:beans>
+
+	<flow name="XmlToPojoFlow">
+		<http:listener config-ref="httpListener" path="/xml-to-pojo" doc:name="receiveReq" />
+		<expression-transformer expression="#[app.registry.xStream.fromXML(payload)]" doc:name="toObject" />
+		<foreach collection="#[payload.entries]" doc:name="forEachPerson">
+			<logger message="Person details - name : #[payload.name], address : #[payload.address], sex : #[payload.sex]" level="INFO" doc:name="logPersonDetails" />
+		</foreach>
+        <set-payload value="Request executed successfully" doc:name="setRes"/>
+	</flow>
+
+
+
+</mule>
