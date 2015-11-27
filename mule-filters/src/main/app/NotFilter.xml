@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+
+	<flow name="NotFilterFlow">
+		<http:listener config-ref="httpListener" path="/not/{name}" doc:name="receiveReq" />
+		<not-filter doc:name="filterNotRam">
+			<message-property-filter pattern="http.uri.params=*name=[ram]*" caseSensitive="false" scope="inbound" />
+		</not-filter>
+		<logger message="Yes, you are not ram" level="INFO" doc:name="logInfo" />
+		<set-payload value="Yes, you are not ram" mimeType="application/json" doc:name="setRes" />
+	</flow>
+</mule>

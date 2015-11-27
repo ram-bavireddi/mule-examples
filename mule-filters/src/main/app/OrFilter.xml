@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+	<flow name="orFilter">
+		<http:listener config-ref="httpListener" path="/or/{type}" doc:name="receiveReq" />
+		<set-payload value="#[['type' : message.inboundProperties.get('http.uri.params').get('type')]]" doc:name="setPayload" />
+		<or-filter doc:name="debitOrCredit">
+			<expression-filter expression="#['both'.equalsIgnoreCase(payload.type)]" />
+			<expression-filter expression="#['credit'.equalsIgnoreCase(payload.type)]" />
+			<expression-filter expression="#['debit'.equalsIgnoreCase(payload.type)]" />
+		</or-filter>
+		<logger message="Payload #[payload] accepted by the filter" level="INFO" doc:name="logInfo" />
+		<set-payload value="Payload #[payload] accepted by the filter" mimeType="application/json" doc:name="setRes" />
+	</flow>
+</mule>

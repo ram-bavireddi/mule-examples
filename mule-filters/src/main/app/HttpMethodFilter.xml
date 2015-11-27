@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+
+	<flow name="filterOptionsMethod">
+		<http:listener config-ref="httpListener" path="/test" doc:name="receiveReq" />
+		<message-filter onUnaccepted="set405" doc:name="filterOptionsMethod">
+			<not-filter>
+				<message-property-filter pattern="http.method=options" caseSensitive="false" scope="inbound" />
+			</not-filter>
+		</message-filter>
+	</flow>
+	<sub-flow name="set405">
+		<set-property propertyName="http.status" value="405" doc:name="405" />
+		<set-payload value="HTTP method OPTIONS not allowed" doc:name="Set Payload" />
+	</sub-flow>
+</mule>

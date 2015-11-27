@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+
+	<flow name="messagePropertyFilter">
+		<http:listener config-ref="httpListener" path="/property/{fname}/{lname}" doc:name="receiveReq" />
+		<and-filter doc:name="compositeMessagePropertyFilter">
+			<message-property-filter pattern="http.uri.params=*lname=[bavireddi]*" caseSensitive="false" scope="inbound" />
+			<message-property-filter pattern="http.uri.params=*fname=[ram]*" caseSensitive="false" scope="inbound" />
+		</and-filter>
+		<logger message="You are accepted by the filter" level="INFO" doc:name="logInfo" />
+		<set-payload value="You are accepted by the filter" mimeType="application/json" doc:name="setRes" />
+	</flow>
+
+	<flow name="expressionFilterToMessageProperty">
+		<http:listener config-ref="httpListener" path="/ex/{name1}/{name2}" doc:name="receiveReq" />
+		<and-filter doc:name="compositeExpressionFilter">
+			<expression-filter expression="#['bavireddi'.equalsIgnoreCase(message.inboundProperties.'http.uri.params'.name2)]" />
+            <expression-filter expression="#['ram'.equalsIgnoreCase(message.inboundProperties.'http.uri.params'.name1)]"/>
+		</and-filter>
+		<logger message="You are accepted by the filter" level="INFO" doc:name="logInfo" />
+		<set-payload value="You are accepted by the filter" mimeType="application/json" doc:name="setRes" />
+	</flow>
+</mule>
