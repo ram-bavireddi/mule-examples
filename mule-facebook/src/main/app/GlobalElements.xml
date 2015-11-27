@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:secure-property-placeholder="http://www.mulesoft.org/schema/mule/secure-property-placeholder" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:facebook="http://www.mulesoft.org/schema/mule/facebook" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/facebook http://www.mulesoft.org/schema/mule/facebook/current/mule-facebook.xsd
+http://www.mulesoft.org/schema/mule/secure-property-placeholder http://www.mulesoft.org/schema/mule/secure-property-placeholder/current/mule-secure-property-placeholder.xsd">
+
+	<http:listener-config name="mainHttpListener" host="localhost" port="8082" doc:name="HTTP Listener Configuration" />
+
+	<!-- This Listener is required to receive callback from Facebook -->
+	<http:listener-config name="fbCallbackHttpListener" host="localhost" port="8081" doc:name="HTTP Listener Configuration" />
+
+	<facebook:config-with-oauth name="facebookConfiguration" consumerKey="${appId}" consumerSecret="${appSecret}" doc:name="Facebook"
+		scope="user_about_me">
+		<facebook:oauth-callback-config domain="localhost" localPort="8081" remotePort="8081" path="callback" />
+	</facebook:config-with-oauth>
+
+	<secure-property-placeholder:config name="securePropertyPlaceholder" encryptionAlgorithm="Blowfish" key="${vault.key}"
+		location="facebook_creds.properties" doc:name="Secure Property Placeholder" />
+</mule>

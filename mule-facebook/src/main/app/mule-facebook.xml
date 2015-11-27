@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:facebook="http://www.mulesoft.org/schema/mule/facebook" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/facebook http://www.mulesoft.org/schema/mule/facebook/current/mule-facebook.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+
+	<flow name="authorize">
+		<http:listener config-ref="mainHttpListener" path="/facebook/user" doc:name="receiveRequest" />
+		<facebook:authorize config-ref="facebookConfiguration" doc:name="authorize" />
+		<flow-ref name="getUser" doc:name="getUser" />
+	</flow>
+
+	<sub-flow name="getUser">
+		<facebook:get-user config-ref="facebookConfiguration" user="me" doc:name="getUser" />
+		<dw:transform-message doc:name="toJson">
+			<dw:set-payload>
+            	<![CDATA[
+            		%dw 1.0
+					%output application/json
+					---
+					payload
+				]]>
+			</dw:set-payload>
+		</dw:transform-message>
+		<logger message="#[payload]" level="INFO" doc:name="logPayload" />
+	</sub-flow>
+</mule>
