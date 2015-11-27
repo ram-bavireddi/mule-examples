@@ -1,0 +1,10 @@
+{
+	"customer": {
+		"name": "Ram Bavireddi",
+		"age": 27,
+		"address": {
+			"city": "HYD",
+			"pinCode": "500072"
+		}
+	}
+}
