@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:encryption="http://www.mulesoft.org/schema/mule/encryption" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/encryption http://www.mulesoft.org/schema/mule/encryption/current/mule-encryption.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+
+	<http:listener-config name="HTTPListenerConfiguration" host="0.0.0.0" port="8081" basePath="/pgp" doc:name="HTTP Listener Configuration" />
+
+	<encryption:config name="PgpEncrypter" defaultEncrypter="PGP_ENCRYPTER" doc:name="Encryption">
+		<encryption:pgp-encrypter-config publicKeyRingFileName="pubring.gpg" secretAliasId="7013658868413526717" secretPassphrase="ram" secretKeyRingFileName="secring.gpg"/>
+	</encryption:config>
+    <encryption:config name="PgpDecrypter" defaultEncrypter="PGP_ENCRYPTER" doc:name="Encryption">
+        <encryption:pgp-encrypter-config publicKeyRingFileName="pubring.gpg" secretKeyRingFileName="secring.gpg" secretAliasId="3189251865765670572" secretPassphrase="ram"/>
+    </encryption:config>
+    <flow name="PGPEncrypterFlow">
+        <http:listener config-ref="HTTPListenerConfiguration" path="/test" doc:name="receiveReq"/>
+        <set-payload value="Hello PGP" doc:name="setSamplePayload"/>
+        <encryption:encrypt config-ref="PgpEncrypter" doc:name="encryptPayload">
+            <encryption:pgp-encrypter principal="Ram Bavireddi &lt;ramu.bavireddi@gmail.com&gt;"/>
+        </encryption:encrypt>
+        <logger message="Encrypted payload is - #[payload]" level="INFO" doc:name="logPayload"/>
+        <vm:outbound-endpoint exchange-pattern="one-way" path="pgp.queue" doc:name="VM"/>
+    </flow>
+    <flow name="PGPDecrypterFlow">
+        <vm:inbound-endpoint exchange-pattern="one-way"  doc:name="VM" path="pgp.queue"/>
+        <encryption:decrypt config-ref="PgpDecrypter" doc:name="decryptPayload">
+            <encryption:pgp-encrypter principal="Ram Bavireddi &lt;ramu.bavireddi@gmail.com&gt;"/>
+        </encryption:decrypt>
+        <logger message="Decrypted payload is - #[payload]" level="INFO" doc:name="logPayload"/>
+    </flow>
+
+</mule>
