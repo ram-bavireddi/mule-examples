@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:oauth2-provider="http://www.mulesoft.org/schema/mule/oauth2-provider" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:ss="http://www.springframework.org/schema/security" xmlns:mule-ss="http://www.mulesoft.org/schema/mule/spring-security"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/spring-security http://www.mulesoft.org/schema/mule/spring-security/current/mule-spring-security.xsd
+http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
+http://www.mulesoft.org/schema/mule/oauth2-provider http://www.mulesoft.org/schema/mule/oauth2-provider/current/mule-oauth2-provider.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+
+	<spring:beans>
+		<ss:authentication-manager id="resourceOwnerAuthenticationManager">
+			<ss:authentication-provider>
+				<ss:user-service id="resourceOwnerUserService">
+					<ss:user name="ram" password="ram" authorities="RESOURCE_OWNER" />
+				</ss:user-service>
+			</ss:authentication-provider>
+		</ss:authentication-manager>
+	</spring:beans>
+
+	<mule-ss:security-manager>
+		<mule-ss:delegate-security-provider name="resourceOwnerSecurityProvider" delegate-ref="resourceOwnerAuthenticationManager" />
+	</mule-ss:security-manager>
+
+	<oauth2-provider:config name="oAuth2Provider" providerName="API OAuth2 Security Provider"
+		resourceOwnerSecurityProvider-ref="resourceOwnerSecurityProvider" scopes="READ WRITE" listenerConfig-ref="httpListenerConfiguration"
+		supportedGrantTypes="CLIENT_CREDENTIALS" doc:name="oAuth2Provider">
+		<oauth2-provider:clients>
+			<oauth2-provider:client clientId="12345" secret="12345" type="CONFIDENTIAL" clientName="myClient"
+				description="Sample client">
+				<oauth2-provider:redirect-uris>
+					<oauth2-provider:redirect-uri>http://localhost*</oauth2-provider:redirect-uri>
+				</oauth2-provider:redirect-uris>
+				<oauth2-provider:authorized-grant-types>
+					<oauth2-provider:authorized-grant-type>CLIENT_CREDENTIALS</oauth2-provider:authorized-grant-type>
+				</oauth2-provider:authorized-grant-types>
+				<oauth2-provider:scopes>
+					<oauth2-provider:scope>READ</oauth2-provider:scope>
+					<oauth2-provider:scope>WRITE</oauth2-provider:scope>
+				</oauth2-provider:scopes>
+			</oauth2-provider:client>
+		</oauth2-provider:clients>
+	</oauth2-provider:config>
+
+	<flow name="oAuth2ProviderDemoFlow">
+		<http:listener config-ref="httpListenerConfiguration" path="/resource" doc:name="receiveReq" />
+		<oauth2-provider:validate config-ref="oAuth2Provider" scopes="READ" throwExceptionOnUnaccepted="true"
+			doc:name="validateTokean" />
+		<set-payload value="Congrats! You are authorized to access this protected resource" doc:name="setSamplePayload" />
+	</flow>
+</mule>
