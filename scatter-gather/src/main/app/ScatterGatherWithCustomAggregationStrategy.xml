@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+
+	<flow name="scatterGatherWithCustomAggregationStrategy">
+		<http:listener config-ref="HTTP_Listener_Configuration" path="/scatter-gather-custom-agg-test" doc:name="HTTP" />
+		<scatter-gather doc:name="Scatter-Gather">
+			<custom-aggregation-strategy class="org.ram.mule.examples.MergingAggregationStrategy" />
+			<flow-ref name="subFlow3" doc:name="callSubFlow3" />
+			<flow-ref name="subFlow4" doc:name="callSubFlow4" />
+		</scatter-gather>
+		<logger message="Payload #[payload]" level="INFO" doc:name="logPayload" />
+		<foreach doc:name="forEach" collection="#[payload]">
+			<logger message="Payload #[flowVars.counter] is : #[payload]" level="INFO" doc:name="logEachPayload" />
+		</foreach>
+		<set-payload value="{&quot;message&quot;: &quot;success&quot;}" mimeType="application/json" doc:name="setResponse" />
+	</flow>
+	<sub-flow name="subFlow3">
+		<!-- <logger message="Thread executing the flow: #[Thread.currentThread()]" level="INFO" doc:name="logThreadInfo" /> -->
+		<set-payload value="#[['Payload1', 'Payload2', 'Payload3']]" doc:name="setPayload" />
+	</sub-flow>
+	<sub-flow name="subFlow4">
+		<!-- <logger message="Thread executing the flow: #[Thread.currentThread()]" level="INFO" doc:name="logThreadInfo" /> -->
+		<set-payload value="#[['Payload4', 'Payload5']]" doc:name="setPayload" />
+	</sub-flow>
+</mule>
