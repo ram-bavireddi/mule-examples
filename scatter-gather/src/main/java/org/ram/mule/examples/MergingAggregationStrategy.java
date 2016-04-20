@@ -10,16 +10,18 @@ import org.mule.api.MuleEvent;
 import org.mule.api.MuleException;
 import org.mule.api.MuleMessage;
 import org.mule.api.MuleMessageCollection;
+import org.mule.api.context.MuleContextAware;
 import org.mule.api.routing.AggregationContext;
 import org.mule.routing.AggregationStrategy;
 
-public class MergingAggregationStrategy implements AggregationStrategy {
+public class MergingAggregationStrategy implements AggregationStrategy, MuleContextAware {
+
+	private MuleContext muleContext;
 
 	@Override
 	public MuleEvent aggregate(AggregationContext context) throws MuleException {
 		MuleEvent resultEvent = null;
 		MuleEvent previous = context.getOriginalEvent();
-		MuleContext muleContext = previous.getMuleContext();
 		MuleMessageCollection coll = new DefaultMessageCollection(muleContext);
 
 		for (MuleEvent event : context.collectEventsWithoutExceptions()) {
@@ -36,5 +38,10 @@ public class MergingAggregationStrategy implements AggregationStrategy {
 			resultEvent.setFlowVariable(name, previous.getFlowVariable(name));
 		}
 		return resultEvent;
+	}
+
+	@Override
+	public void setMuleContext(MuleContext context) {
+		muleContext = context;
 	}
 }
